@@ -25,8 +25,8 @@ select case when cnt=0 then 'A'
             when cnt=1 then 'B'
             when cnt=2 then 'C'
             else 'D'
-        end as segment,
-        sum(media_count)
+        end as segment_group,
+        sum(media_count) as cnt
 
        from
         (
@@ -46,4 +46,4 @@ select case when cnt=0 then 'A'
            group by cnt,  media_count
 
     ) as counted
-    group by segment
+    group by segment_group
