@@ -1,17 +1,36 @@
 
-select  max(mx) from (
-              SELECT genre_id, array_agg((cnt)) mx FROM (
-    SELECT customer.customer_id as c_id, company as company_name, genre_id, count(t.genre_id) as cnt FROM customer
-        left join invoice i on customer.customer_id = i.customer_id
-        left join invoice_line il on i.invoice_id = il.invoice_id
-        left join track t on t.track_id = il.track_id
-    where company is not null
-    GROUP BY c_id, company, genre_id
-    order by c_id
-) as company_genres_count
 
-GROUP BY  genre_id
-order by genre_id
-                  ) as company_genres_count
-where genre_id=1
+WITH count_of_sales_by_genre AS (
+    select genre_id, count(distinct i.invoice_id) from track
+    left join invoice_line il on track.track_id = il.track_id
+    left join invoice i on il.invoice_id = i.invoice_id
+    group by genre_id
+)
 
+SELECT * FROM count_of_sales_by_genre
+
+
+
+WITH company_invoices_by_genre AS (
+-- Список Компаний совершивших покупки по каждому из жанров
+    SELECT t.genre_id, array_agg( distinct ( customer.customer_id)) FROM customer
+        LEFT JOIN invoice i on customer.customer_id = i.customer_id
+        LEFT JOIN invoice_line il on i.invoice_id = il.invoice_id
+        LEFT JOIN track t on il.track_id = t.track_id
+    WHERE company is not null
+    group by t.genre_id
+)
+
+
+SELECT genre_id, max(cnt) FROM
+(
+    -- Количество покупок композиций по жанру для компании
+
+    SELECT genre_id, customer.company, count(i.invoice_id) as cnt  FROM customer
+    LEFT JOIN invoice i on customer.customer_id = i.customer_id
+    LEFT JOIN invoice_line il on i.invoice_id = il.invoice_id
+    LEFT JOIN track t on il.track_id = t.track_id
+    WHERE company is not null
+    group by genre_id, customer.company
+) as count_of_company_invoices_by_genre
+GROUP BY genre_id
